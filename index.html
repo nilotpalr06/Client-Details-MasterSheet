@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CX Client Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --surface: #ffffff;
+    --surface2: #f0f2f8;
+    --border: #e0e4ef;
+    --accent: #3a72e8;
+    --accent2: #6b4ef7;
+    --green: #18a558;
+    --yellow: #c8960a;
+    --text: #1a1d2e;
+    --muted: #7a82a0;
+    --chip-bg: #f0f2f8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 66px;
+  }
+  .header-left { display: flex; align-items: center; gap: 14px; }
+  .logo { width: 36px; height: 36px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+  .header-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .total-badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; white-space: nowrap; }
+  .total-badge span { color: var(--accent); font-weight: 600; }
+
+  /* STATS ROW */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 20px 32px 0; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; transition: border-color .2s; }
+  .stat-card:hover { border-color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 700; font-family: 'DM Mono', monospace; }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.green { color: var(--green); }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-value.purple { color: var(--accent2); }
+
+  /* CONTROLS */
+  .controls { padding: 20px 32px 12px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .search-wrap { flex: 1; min-width: 220px; position: relative; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 14px; pointer-events: none; }
+  .search-wrap input {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px 10px 34px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+    outline: none; transition: border-color .2s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap input::placeholder { color: var(--muted); }
+
+  /* POC single select */
+  .poc-select {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 30px 10px 14px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+    outline: none; cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7494' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+    transition: border-color .2s; min-width: 130px;
+  }
+  .poc-select:focus { border-color: var(--accent); }
+
+  /* CUSTOM MULTI-SELECT */
+  .ms-wrap { position: relative; }
+  .ms-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 30px 10px 14px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+    cursor: pointer; white-space: nowrap; min-width: 150px;
+    display: flex; align-items: center; gap: 6px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7494' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center;
+    user-select: none; transition: border-color .2s;
+  }
+  .ms-btn:hover, .ms-btn.open { border-color: var(--accent); }
+  .ms-count { background: var(--accent); color: #fff; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .ms-dropdown {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 400;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+    min-width: 210px; max-height: 290px; overflow-y: auto;
+    display: none; padding: 6px 0;
+  }
+  .ms-dropdown.open { display: block; }
+  .ms-option {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px; cursor: pointer; font-size: 13px;
+    transition: background .1s; user-select: none;
+  }
+  .ms-option:hover { background: var(--surface2); }
+  .ms-option.selected { color: var(--accent); }
+  .ms-checkbox {
+    width: 16px; height: 16px; border: 1.5px solid var(--border);
+    border-radius: 4px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    background: var(--surface); transition: all .12s;
+  }
+  .ms-option.selected .ms-checkbox { background: var(--accent); border-color: var(--accent); }
+  .ms-clear-row { padding: 7px 14px; font-size: 12px; color: var(--muted); cursor: pointer; border-top: 1px solid var(--border); margin-top: 4px; }
+  .ms-clear-row:hover { color: var(--accent); }
+
+  .results-count { font-size: 13px; color: var(--muted); white-space: nowrap; font-family: 'DM Mono', monospace; margin-left: 4px; }
+  .export-btn {
+    display: flex; align-items: center; gap: 7px;
+    background: var(--accent); color: #fff;
+    border: none; border-radius: 10px; padding: 10px 16px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity .15s; white-space: nowrap; margin-left: auto;
+  }
+  .export-btn:hover { opacity: 0.88; }
+  .export-btn svg { flex-shrink: 0; }
+  .results-count span { color: var(--text); font-weight: 600; }
+
+  /* TABLE */
+  .table-wrap { padding: 0 32px 32px; overflow-x: auto; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+  thead th {
+    background: var(--surface2);
+    color: var(--muted);
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.7px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    border-top: 1px solid var(--border);
+    text-align: left; white-space: nowrap;
+    cursor: pointer; user-select: none;
+    position: sticky; top: 0; z-index: 100;
+    transition: color .15s;
+  }
+  thead th:first-child { border-left: 1px solid var(--border); border-radius: 10px 0 0 0; }
+  thead th:last-child { border-right: 1px solid var(--border); border-radius: 0 10px 0 0; }
+  thead th:hover { color: var(--text); }
+  thead th.sorted { color: var(--accent); }
+
+  tbody tr { transition: background .1s; cursor: pointer; }
+  tbody tr:hover td { background: #eef2fc; }
+  tbody tr.selected td { background: rgba(58,114,232,0.07); }
+  td {
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+    background: var(--surface);
+  }
+  tbody tr:first-child td { /* no top border needed - header covers it */ }
+
+  .client-name { font-weight: 600; color: var(--text); font-size: 13px; max-width: 200px; }
+  .client-id { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); }
+  .poc-pill { display: inline-flex; align-items: center; gap: 5px; background: var(--chip-bg); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px 3px 6px; font-size: 12px; white-space: nowrap; }
+  .poc-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .yes-chip { display: inline-block; background: rgba(24,165,88,0.10); color: var(--green); border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+  .no-chip { display: inline-block; background: rgba(122,130,160,0.10); color: var(--muted); border-radius: 6px; padding: 2px 8px; font-size: 11px; }
+  .emp-base { font-family: 'DM Mono', monospace; font-size: 12px; }
+  .integ-badge { background: var(--chip-bg); border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; font-size: 11px; color: var(--text); white-space: nowrap; }
+  .sort-arrow { margin-left: 3px; opacity: 0.45; }
+  .rev-val { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text); }
+  .arr-val { color: var(--green) !important; font-weight: 600; }
+
+  /* DETAIL PANEL */
+  .detail-panel {
+    position: fixed; right: 0; top: 0; bottom: 0;
+    width: 380px; background: var(--surface);
+    border-left: 1px solid var(--border);
+    padding: 28px; transform: translateX(100%);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+    overflow-y: auto; z-index: 500;
+    box-shadow: -4px 0 20px rgba(0,0,0,0.06);
+  }
+  .detail-panel.open { transform: translateX(0); }
+  .detail-close { position: absolute; top: 20px; right: 20px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; color: var(--muted); font-size: 14px; transition: color .15s; }
+  .detail-close:hover { color: var(--text); }
+  .detail-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; padding-right: 40px; line-height: 1.3; }
+  .detail-id { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+  .detail-section { margin-bottom: 20px; }
+  .detail-section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 10px; font-weight: 600; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .detail-item { background: var(--surface2); border-radius: 8px; padding: 10px 12px; }
+  .detail-item-label { font-size: 10px; color: var(--muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .detail-item-value { font-size: 13px; font-weight: 500; }
+  .detail-item-value.yes { color: var(--green); }
+  .detail-item-value.no { color: var(--muted); }
+  .detail-divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  .no-results { text-align: center; padding: 60px; color: var(--muted); }
+  .no-results-icon { font-size: 40px; margin-bottom: 12px; }
+
+  @media (max-width: 768px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .header, .controls, .table-wrap, .stats-row { padding-left: 16px; padding-right: 16px; }
+    .detail-panel { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">👥</div>
+    <div>
+      <h1>CX Client Master List</h1>
+      <div class="header-sub">Customer Experience · Active Accounts</div>
+    </div>
+  </div>
+  <div class="total-badge">Total Clients: <span id="totalCount">—</span></div>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card"><div class="stat-label">Total Clients</div><div class="stat-value accent" id="s-total">—</div></div>
+  <div class="stat-card"><div class="stat-label">Total Employees</div><div class="stat-value green" id="s-emp">—</div></div>
+  <div class="stat-card"><div class="stat-label">HRIS Integrated</div><div class="stat-value yellow" id="s-hris">—</div></div>
+  <div class="stat-card"><div class="stat-label">Recognition Active</div><div class="stat-value purple" id="s-recog">—</div></div>
+  <div class="stat-card"><div class="stat-label">MS Teams Enabled</div><div class="stat-value accent" id="s-teams">—</div></div>
+  <div class="stat-card"><div class="stat-label">Total ARR</div><div class="stat-value green" id="s-arr">—</div></div>
+  <div class="stat-card"><div class="stat-label">Subscription Revenue</div><div class="stat-value accent" id="s-sub">—</div></div>
+  <div class="stat-card"><div class="stat-label">Avg Cost / User</div><div class="stat-value yellow" id="s-cpu">—</div></div>
+</div>
+
+<div class="controls">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="search" placeholder="Search client name, ID, POC, integration…">
+  </div>
+
+  <!-- POC single select -->
+  <select class="poc-select" id="filterPOC">
+    <option value="">All POCs</option>
+  </select>
+
+  <!-- Integration multi-select -->
+  <div class="ms-wrap" id="integWrap">
+    <div class="ms-btn" id="integBtn" onclick="toggleDropdown('integDropdown','integBtn')">
+      <span id="integLabel">Integration</span>
+      <span class="ms-count" id="integCount" style="display:none"></span>
+    </div>
+    <div class="ms-dropdown" id="integDropdown"></div>
+  </div>
+
+  <!-- Features multi-select -->
+  <div class="ms-wrap" id="featWrap">
+    <div class="ms-btn" id="featBtn" onclick="toggleDropdown('featDropdown','featBtn')">
+      <span id="featLabel">Features</span>
+      <span class="ms-count" id="featCount" style="display:none"></span>
+    </div>
+    <div class="ms-dropdown" id="featDropdown"></div>
+  </div>
+
+  <div class="results-count">Showing <span id="showCount">—</span> clients</div>
+  <button class="export-btn" onclick="exportCSV()">
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 10.5L3.5 6.5H6V1.5H9V6.5H11.5L7.5 10.5Z" fill="white"/><path d="M2 12.5H13V13.5H2V12.5Z" fill="white"/></svg>
+    Export CSV
+  </button>
+</div>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th data-col="Client Name">Client <span class="sort-arrow">↕</span></th>
+        <th data-col="Client ID">ID <span class="sort-arrow">↕</span></th>
+        <th data-col="CX POC">POC <span class="sort-arrow">↕</span></th>
+        <th data-col="Employee Base">Employees <span class="sort-arrow">↕</span></th>
+        <th data-col="Integration Method">Integration</th>
+        <th data-col="Recognition">Recog.</th>
+        <th data-col="Perks">Perks</th>
+        <th data-col="Redemption">Redemp.</th>
+        <th data-col="Pulse">Pulse</th>
+        <th data-col="MS Teams">Teams</th>
+        <th data-col="Profile Badge">Badge</th>
+        <th data-col="HRIS Integration with VC">HRIS</th>
+        <th data-col="Subscription Value (Yearly)">Subscription (Yr)</th>
+        <th data-col="Billing Frequency">Billing Freq.</th>
+        <th data-col="Cost per User">Cost/User</th>
+        <th data-col="ARR">ARR</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+  <div id="noResults" class="no-results" style="display:none">
+    <div class="no-results-icon">🔍</div>
+    No clients match your search
+  </div>
+</div>
+
+<div class="detail-panel" id="detailPanel">
+  <button class="detail-close" onclick="closeDetail()">✕</button>
+  <div id="detailContent"></div>
+</div>
+
+<script>
+const DATA = [{"Client Name":"AAJ Enterprises","Client ID":"1712","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"No","Pulse":"No","Employee Base":"345","HRIS Integration with VC":"Yes","Integration Method":"Zoho","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"ABB","Client ID":"1802","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"2000","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Abstract Tech Asia Private Limited","Client ID":"1843","CX POC":"Risha","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"48","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Adbuffs","Client ID":"1056","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"103","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Addverb Technologies Limited","Client ID":"1612","CX POC":"Debraj","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"947","HRIS Integration with VC":"Yes","Integration Method":"HR One","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Amplus Solar","Client ID":"1264","CX POC":"Risha","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"Yes","Employee Base":"627","HRIS Integration with VC":"No","Integration Method":"API","Profile Badge":"Yes","SYB":"Yes","SYB No of Years":"5,7,10","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Antara Senior Care","Client ID":"1695","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"1179","HRIS Integration with VC":"Yes","Integration Method":"PeopleStrong","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Aptean","Client ID":"1732","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"4895","HRIS Integration with VC":"No","Integration Method":"SFTP","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Aspire Systems (India) Private Limited","Client ID":"1787","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"5000","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Astra Systems Private Limited","Client ID":"1699","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"94","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"AutoLiv","Client ID":"1481","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"2799","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Bangalore International Airport Limited","Client ID":"1442","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"Yes","Perks":"No","Redemption":"Yes","Pulse":"No","Employee Base":"1894","HRIS Integration with VC":"Yes","Integration Method":"PeopleStrong","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Bare International","Client ID":"507","CX POC":"Prachir","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"152","HRIS Integration with VC":"No","Integration Method":"PeopleStrong","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Bata","Client ID":"1786","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"Yes","Perks":"No","Redemption":"Yes","Pulse":"No","Employee Base":"1000","HRIS Integration with VC":"No","Integration Method":"GTS","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"BDO Rise","Client ID":"994","CX POC":"Debraj","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"3465","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Bharat Petroleum Corporation Limited (BPCL)","Client ID":"1477","CX POC":"Risha","Engagement Status":"Active","Recognition":"Yes","Perks":"No","Redemption":"Yes","Pulse":"No","Employee Base":"8682","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Black Box","Client ID":"1044","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"3036","HRIS Integration with VC":"Yes","Integration Method":"Oracle","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Blueyonder","Client ID":"522","CX POC":"Risha","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"2135","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Britive India Pvt. Ltd","Client ID":"1624","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"No","Perks":"No","Redemption":"No","Pulse":"Yes","Employee Base":"42","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Calyx (Perceptive Informatics LLC)","Client ID":"1474","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"1721","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"CEGIS","Client ID":"1535","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"61","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Celebal Technologies Private Limited","Client ID":"1545","CX POC":"Debraj","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"2349","HRIS Integration with VC":"Yes","Integration Method":"Darwin Box","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Compliance Quest","Client ID":"1638","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"No","Perks":"No","Redemption":"No","Pulse":"Yes","Employee Base":"146","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Coromandel International","Client ID":"1605","CX POC":"Risha","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"5200","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Critical River","Client ID":"1066","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"606","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"DHL Express Pte Ltd.","Client ID":"1682","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"234","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Dijital People","Client ID":"1450","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"Yes","Perks":"No","Redemption":"No","Pulse":"No","Employee Base":"218","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"DNV","Client ID":"923","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"765","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"DNV - SEA","Client ID":"1414","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"324","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Emtec","Client ID":"529","CX POC":"Parineeta","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"80","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Equitas Small Finance Bank","Client ID":"820","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"21820","HRIS Integration with VC":"Yes","Integration Method":"PeopleStrong","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Exeevo","Client ID":"861","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"92","HRIS Integration with VC":"No","Integration Method":"PeopleStrong","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Godrej Consumer Products Ltd (GCPL)","Client ID":"1314","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"315","HRIS Integration with VC":"No","Integration Method":"GTS","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Harrow Green Limited","Client ID":"1834","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"330","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"HDFC ERGO","Client ID":"1260","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"Yes","Perks":"No","Redemption":"No","Pulse":"No","Employee Base":"13762","HRIS Integration with VC":"Yes","Integration Method":"PeopleStrong","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Hetero Labs","Client ID":"1630","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"No","Pulse":"No","Employee Base":"16","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"HTC Global Services Private Limited","Client ID":"1262","CX POC":"Risha","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"Yes","Employee Base":"7400","HRIS Integration with VC":"Yes","Integration Method":"GTS","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Icertis","Client ID":"1159","CX POC":"Risha","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"2127","HRIS Integration with VC":"Yes","Integration Method":"Oracle","Profile Badge":"Yes","SYB":"Yes","SYB No of Years":"5,10","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"IDEXCEL","Client ID":"810","CX POC":"Debraj","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"312","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Ingenico International Singapore Pte Ltd","Client ID":"1589","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"393","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"Yes (Every year)","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"IschoolConnect","Client ID":"548","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"112","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"ITC Hotels","Client ID":"717","CX POC":"Debraj","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"7764","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"ITC Tobacco","Client ID":"1230","CX POC":"Risha","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"839","HRIS Integration with VC":"Yes","Integration Method":"SAP","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Kapitus","Client ID":"1107","CX POC":"Debraj","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"214","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"KnS Partners","Client ID":"596","CX POC":"Parineeta","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"450","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Koantek","Client ID":"1815","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"No","Perks":"No","Redemption":"No","Pulse":"Yes","Employee Base":"250","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Lendingkart","Client ID":"576","CX POC":"Sahin","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"2128","HRIS Integration with VC":"No","Integration Method":"Self Registration","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Manipal Group (uNEXT)","Client ID":"783","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"1479","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Mcafee","Client ID":"454","CX POC":"Parineeta","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"No","Pulse":"No","Employee Base":"2491","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Medikabazaar","Client ID":"1679","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"No","Pulse":"Yes","Employee Base":"654","HRIS Integration with VC":"Yes","Integration Method":"PeopleStrong","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Merit Data and Technology Private Limited","Client ID":"1731","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"No","Pulse":"No","Employee Base":"680","HRIS Integration with VC":"Yes","Integration Method":"PeopleStrong","Profile Badge":"Yes","SYB":"Yes","SYB No of Years":"5,10,15,20,25","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Mitsogo Technologies Private Limited / Hexnode","Client ID":"1690","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"587","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Modern Mills Company","Client ID":"1779","CX POC":"Sahin","Engagement Status":"Active","Recognition":"No","Perks":"No","Redemption":"No","Pulse":"Yes","Employee Base":"467","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Mr Cooper | Xome Services","Client ID":"1083","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"3778","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"MS Agarwal Foundries Pvt Ltd","Client ID":"1427","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"331","HRIS Integration with VC":"Yes","Integration Method":"Adrenalin","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Ms Genzeon Technology Solution Pvt Ltd","Client ID":"1428","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"584","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Muthoot Group","Client ID":"1228","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"32011","HRIS Integration with VC":"Yes","Integration Method":"Peoplestrong via SFTP","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Ness","Client ID":"475","CX POC":"Parineeta","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"1544","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Omron Automation","Client ID":"1775","CX POC":"Debraj","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"258","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Pantaloons (Aditya Birla Fashion Retail Limited)","Client ID":"1747","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"No","Pulse":"No","Employee Base":"1000","HRIS Integration with VC":"Yes","Integration Method":"SFTP through Peoplestrong","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Phdata","Client ID":"1640","CX POC":"Debraj","Engagement Status":"Active","Recognition":"No","Perks":"No","Redemption":"Yes","Pulse":"No","Employee Base":"210","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Pluxee","Client ID":"1598","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"No","Pulse":"No","Employee Base":"118","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"R Systems International","Client ID":"1621","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"No","Pulse":"No","Employee Base":"4506","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Restore Datashred","Client ID":"1670","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"No","Pulse":"No","Employee Base":"315","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Sartorius","Client ID":"916","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"744","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"SGS India Pvt Ltd","Client ID":"1696","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"4378","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"SLK Software","Client ID":"455","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"3395","HRIS Integration with VC":"No","Integration Method":"API","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Span Technology","Client ID":"1483","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"318","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"SRF","Client ID":"490","CX POC":"Debraj","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"8509","HRIS Integration with VC":"No","Integration Method":"API","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"SRS Live Technologies","Client ID":"1570","CX POC":"Debraj","Engagement Status":"Active","Recognition":"No","Perks":"No","Redemption":"No","Pulse":"Yes","Employee Base":"149","HRIS Integration with VC":"No","Integration Method":"Pulse","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Sundaram Clayton","Client ID":"1445","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"542","HRIS Integration with VC":"Yes","Integration Method":"Peoplestrong via SFTP","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Systra MVA","Client ID":"1771","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"3000","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"Yes (Not configured yet)","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"T-Systems","Client ID":"1484","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"No","Pulse":"No","Employee Base":"4440","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Tata Advance","Client ID":"575","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"514","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Tata Consultancy Services","Client ID":"1836","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"No","Perks":"No","Redemption":"Yes","Pulse":"No","Employee Base":"450000","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Tata Play","Client ID":"1143","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"1348","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Tata Power","Client ID":"675","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"8303","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Tata Realty","Client ID":"518","CX POC":"Risha","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"327","HRIS Integration with VC":"Yes","Integration Method":"Oracle integration","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Tata Tele","Client ID":"818","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"1764","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Technip Energies India Pvt Ltd","Client ID":"1536","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"559","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Tejas Networks Limited","Client ID":"512","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"2399","HRIS Integration with VC":"No","Integration Method":"SSO","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"TGBS","Client ID":"1588","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"No","Pulse":"No","Employee Base":"583","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Thyssenkrupp Industries","Client ID":"1408","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"2343","HRIS Integration with VC":"Yes","Integration Method":"Adrenalin","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Tiger Analytics","Client ID":"1443","CX POC":"Sahin","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"No","Pulse":"No","Employee Base":"5305","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Toyota Connected India Private Limited","Client ID":"1276","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"208","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Trantor","Client ID":"697","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"593","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Ultra tech","Client ID":"550","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"802","HRIS Integration with VC":"Yes","Integration Method":"PeopleStrong","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Value Labs","Client ID":"517","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"6880","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Vesuvius India Limited","Client ID":"1722","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"500","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Vitesco","Client ID":"1307","CX POC":"Debraj","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"1065","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Voya India","Client ID":"561","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"3115","HRIS Integration with VC":"Yes","Integration Method":"SF(Success Factor)","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Weaver and Tidwell India LLP","Client ID":"1811","CX POC":"Debraj","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"No","Pulse":"No","Employee Base":"250","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"White Rivers Media","Client ID":"1674","CX POC":"Debraj","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"390","HRIS Integration with VC":"Yes","Integration Method":"HR One","Profile Badge":"Yes","SYB":"Yes","SYB No of Years":"1 year to 15 years","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Xoriant Solutions Pvt. Ltd.","Client ID":"1855","CX POC":"Risha","Engagement Status":"Active","Recognition":"No","Perks":"No","Redemption":"No","Pulse":"Yes","Employee Base":"3500","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Yash Technologies","Client ID":"1370","CX POC":"Kaushik","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"5769","HRIS Integration with VC":"No","Integration Method":"SFTP","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Zscaler","Client ID":"1359","CX POC":"Kalyanjit","Engagement Status":"Active","Recognition":"No","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"3100","HRIS Integration with VC":"No","Integration Method":"CSV Upload","Profile Badge":"No","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Zuno","Client ID":"964","CX POC":"Risha","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"547","HRIS Integration with VC":"Yes","Integration Method":"Darwin Box","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Zuventus Health Care","Client ID":"1235","CX POC":"Rakesh","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"3243","HRIS Integration with VC":"Yes","Integration Method":"PeopleStrong","Profile Badge":"Yes","SYB":"No","SYB No of Years":"NA","MS Teams":"No","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""},{"Client Name":"Novel Jewels | Birla Novel","Client ID":"1894","CX POC":"Sahin","Engagement Status":"Active","Recognition":"Yes","Perks":"Yes","Redemption":"Yes","Pulse":"No","Employee Base":"2000","HRIS Integration with VC":"","Integration Method":"","Profile Badge":"","SYB":"","SYB No of Years":"","MS Teams":"Yes","Subscription Value (Yearly)":"","Billing Frequency":"","Cost per User":"","ARR":""}];
+
+const POC_COLORS = {
+  Sahin:'#d4890a', Kalyanjit:'#2563eb', Risha:'#db2777',
+  Debraj:'#16a34a', Kaushik:'#ea580c', Rakesh:'#7c3aed',
+  Parineeta:'#0891b2', Prachir:'#dc2626'
+};
+
+const FEATURE_OPTIONS = [
+  {col:'Recognition', label:'Recognition'},
+  {col:'Perks', label:'Perks'},
+  {col:'Redemption', label:'Redemption'},
+  {col:'Pulse', label:'Pulse'},
+  {col:'HRIS Integration with VC', label:'HRIS Integration'},
+  {col:'MS Teams', label:'MS Teams'},
+  {col:'Profile Badge', label:'Profile Badge'},
+  {col:'SYB', label:'SYB'},
+];
+
+let filtered = [...DATA];
+let sortCol = 'Client Name', sortDir = 1;
+let selectedRow = null;
+let selectedFeatures = new Set();
+let selectedInteg = new Set();
+
+function chip(val) {
+  if (!val || val === '') return '<span class="no-chip">—</span>';
+  if (val === 'Yes') return '<span class="yes-chip">Yes</span>';
+  if (val === 'No') return '<span class="no-chip">No</span>';
+  return `<span class="no-chip">${val}</span>`;
+}
+function fmtEmp(n) {
+  const v = parseInt(n);
+  if (!v) return '—';
+  return v >= 1000 ? (v/1000).toFixed(v%1000===0?0:1)+'K' : v.toString();
+}
+
+function fmtRev(n) {
+  if (!n || isNaN(n)) return '—';
+  if (n >= 10000000) return '₹' + (n/10000000).toFixed(1) + 'Cr';
+  if (n >= 100000) return '₹' + (n/100000).toFixed(1) + 'L';
+  if (n >= 1000) return '₹' + (n/1000).toFixed(1) + 'K';
+  return '₹' + n;
+}
+function parseNum(v) { return parseFloat((v||'').toString().replace(/[₹,]/g,'')) || 0; }
+
+function renderStats(dataset) {
+  const src = dataset || DATA;
+  const total = src.length;
+  const emp = src.reduce((s,r)=>s+(parseInt(r['Employee Base'])||0),0);
+  const hris = src.filter(r=>r['HRIS Integration with VC']==='Yes').length;
+  const recog = src.filter(r=>r['Recognition']==='Yes').length;
+  const teams = src.filter(r=>r['MS Teams']==='Yes').length;
+  const arr = src.reduce((s,r)=>s+parseNum(r['ARR']),0);
+  const sub = src.reduce((s,r)=>s+parseNum(r['Subscription Value (Yearly)']),0);
+  const cpuVals = src.map(r=>parseNum(r['Cost per User'])).filter(v=>v>0);
+  const avgCpu = cpuVals.length ? cpuVals.reduce((a,b)=>a+b,0)/cpuVals.length : 0;
+  document.getElementById('totalCount').textContent = DATA.length;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-emp').textContent = emp>=1000000?(emp/1000000).toFixed(1)+'M':emp>=1000?(emp/1000).toFixed(0)+'K':emp;
+  document.getElementById('s-hris').textContent = hris;
+  document.getElementById('s-recog').textContent = recog;
+  document.getElementById('s-teams').textContent = teams;
+  document.getElementById('s-arr').textContent = arr > 0 ? fmtRev(arr) : '—';
+  document.getElementById('s-sub').textContent = sub > 0 ? fmtRev(sub) : '—';
+  document.getElementById('s-cpu').textContent = avgCpu > 0 ? fmtRev(avgCpu) : '—';
+}
+
+function buildMultiSelect(dropdownId, options, selectedSet, labelId, countId, onChange) {
+  const dd = document.getElementById(dropdownId);
+  dd.innerHTML = '';
+  options.forEach(opt => {
+    const div = document.createElement('div');
+    div.className = 'ms-option' + (selectedSet.has(opt) ? ' selected' : '');
+    div.innerHTML = `<div class="ms-checkbox"></div><span>${opt}</span>`;
+    div.onclick = (e) => {
+      e.stopPropagation();
+      if (selectedSet.has(opt)) selectedSet.delete(opt); else selectedSet.add(opt);
+      buildMultiSelect(dropdownId, options, selectedSet, labelId, countId, onChange);
+      updateMultiBtn(labelId, countId, selectedSet, options[0]);
+      onChange();
+    };
+    dd.appendChild(div);
+  });
+  // Clear row
+  const clr = document.createElement('div');
+  clr.className = 'ms-clear-row';
+  clr.textContent = 'Clear all';
+  clr.onclick = (e) => { e.stopPropagation(); selectedSet.clear(); buildMultiSelect(dropdownId, options, selectedSet, labelId, countId, onChange); updateMultiBtn(labelId, countId, selectedSet, options[0]); onChange(); };
+  dd.appendChild(clr);
+}
+
+function buildFeatureSelect() {
+  buildMultiSelect('featDropdown', FEATURE_OPTIONS.map(f=>f.col), selectedFeatures, 'featLabel', 'featCount', applyFilters);
+  updateMultiBtn('featLabel', 'featCount', selectedFeatures, 'Features');
+}
+function buildIntegSelect() {
+  const integs = [...new Set(DATA.map(r=>r['Integration Method']).filter(Boolean))].sort();
+  buildMultiSelect('integDropdown', integs, selectedInteg, 'integLabel', 'integCount', applyFilters);
+  updateMultiBtn('integLabel', 'integCount', selectedInteg, 'Integration');
+}
+
+function updateMultiBtn(labelId, countId, selectedSet, defaultLabel) {
+  const lbl = document.getElementById(labelId);
+  const cnt = document.getElementById(countId);
+  if (selectedSet.size === 0) {
+    lbl.textContent = defaultLabel;
+    cnt.style.display = 'none';
+  } else {
+    lbl.textContent = defaultLabel;
+    cnt.textContent = selectedSet.size;
+    cnt.style.display = 'inline-block';
+  }
+}
+
+function toggleDropdown(ddId, btnId) {
+  const dd = document.getElementById(ddId);
+  const btn = document.getElementById(btnId);
+  const isOpen = dd.classList.contains('open');
+  // close all
+  document.querySelectorAll('.ms-dropdown').forEach(d=>d.classList.remove('open'));
+  document.querySelectorAll('.ms-btn').forEach(b=>b.classList.remove('open'));
+  if (!isOpen) { dd.classList.add('open'); btn.classList.add('open'); }
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.ms-wrap')) {
+    document.querySelectorAll('.ms-dropdown').forEach(d=>d.classList.remove('open'));
+    document.querySelectorAll('.ms-btn').forEach(b=>b.classList.remove('open'));
+  }
+});
+
+function populatePOC() {
+  const pocs = [...new Set(DATA.map(r=>r['CX POC'].trim()))].sort();
+  const sel = document.getElementById('filterPOC');
+  pocs.forEach(p => { const o=document.createElement('option'); o.value=p; o.textContent=p; sel.appendChild(o); });
+}
+
+function applyFilters() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const poc = document.getElementById('filterPOC').value;
+
+  filtered = DATA.filter(r => {
+    const matchQ = !q || r['Client Name'].toLowerCase().includes(q)
+      || r['Client ID'].includes(q)
+      || r['CX POC'].toLowerCase().includes(q)
+      || (r['Integration Method']||'').toLowerCase().includes(q);
+    const matchPOC = !poc || r['CX POC'].trim() === poc;
+    const matchInteg = selectedInteg.size === 0 || selectedInteg.has(r['Integration Method']);
+    const matchFeat = selectedFeatures.size === 0 || [...selectedFeatures].every(col => r[col] === 'Yes');
+    return matchQ && matchPOC && matchInteg && matchFeat;
+  });
+
+  renderStats(filtered);
+  filtered.sort((a,b) => {
+    let av = a[sortCol]||'', bv = b[sortCol]||'';
+    if (sortCol === 'Employee Base') { av=parseInt(av)||0; bv=parseInt(bv)||0; }
+    if (av < bv) return -sortDir;
+    if (av > bv) return sortDir;
+    return 0;
+  });
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const noRes = document.getElementById('noResults');
+  document.getElementById('showCount').textContent = filtered.length;
+  if (!filtered.length) { tbody.innerHTML=''; noRes.style.display='block'; return; }
+  noRes.style.display = 'none';
+  tbody.innerHTML = filtered.map(r => {
+    const idx = DATA.indexOf(r);
+    const poc = r['CX POC'].trim();
+    const color = POC_COLORS[poc] || '#6b7494';
+    return `<tr onclick="showDetail(${idx})" class="${selectedRow===idx?'selected':''}">
+      <td><div class="client-name">${r['Client Name']}</div></td>
+      <td><span class="client-id">${r['Client ID']}</span></td>
+      <td><span class="poc-pill"><span class="poc-dot" style="background:${color}"></span>${poc}</span></td>
+      <td><span class="emp-base">${fmtEmp(r['Employee Base'])}</span></td>
+      <td>${r['Integration Method']?`<span class="integ-badge">${r['Integration Method']}</span>`:'<span class="no-chip">—</span>'}</td>
+      <td>${chip(r['Recognition'])}</td>
+      <td>${chip(r['Perks'])}</td>
+      <td>${chip(r['Redemption'])}</td>
+      <td>${chip(r['Pulse'])}</td>
+      <td>${chip(r['MS Teams'])}</td>
+      <td>${chip(r['Profile Badge'])}</td>
+      <td>${chip(r['HRIS Integration with VC'])}</td>
+      <td>${r['Subscription Value (Yearly)'] ? `<span class="rev-val">${r['Subscription Value (Yearly)']}</span>` : '<span class="no-chip">—</span>'}</td>
+      <td>${r['Billing Frequency'] ? `<span class="integ-badge">${r['Billing Frequency']}</span>` : '<span class="no-chip">—</span>'}</td>
+      <td>${r['Cost per User'] ? `<span class="rev-val">${r['Cost per User']}</span>` : '<span class="no-chip">—</span>'}</td>
+      <td>${r['ARR'] ? `<span class="rev-val arr-val">${r['ARR']}</span>` : '<span class="no-chip">—</span>'}</td>
+    </tr>\``;
+  }).join('');
+}
+
+function showDetail(idx) {
+  selectedRow = idx;
+  renderTable();
+  const r = DATA[idx];
+  const poc = r['CX POC'].trim();
+  const color = POC_COLORS[poc] || '#6b7494';
+  const emp = parseInt(r['Employee Base'])||0;
+  document.getElementById('detailContent').innerHTML = `
+    <div class="detail-title">${r['Client Name']}</div>
+    <div class="detail-id">Client ID ${r['Client ID']} · ${r['Engagement Status']}</div>
+    <hr class="detail-divider">
+    <div class="detail-section">
+      <div class="detail-section-title">Account Details</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-item-label">CX POC</div><div class="detail-item-value" style="color:${color}">${poc}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Employee Base</div><div class="detail-item-value">${emp.toLocaleString()}</div></div>
+        <div class="detail-item"><div class="detail-item-label">HRIS Integration</div><div class="detail-item-value ${r['HRIS Integration with VC']==='Yes'?'yes':'no'}">${r['HRIS Integration with VC']||'—'}</div></div>
+        <div class="detail-item"><div class="detail-item-label">Integration Method</div><div class="detail-item-value">${r['Integration Method']||'—'}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">Feature Enablement</div>
+      <div class="detail-grid">
+        ${['Recognition','Perks','Redemption','Pulse','MS Teams','Profile Badge','SYB'].map(f=>`
+        <div class="detail-item"><div class="detail-item-label">${f}</div><div class="detail-item-value ${r[f]==='Yes'?'yes':r[f]==='No'?'no':''}">${r[f]||'—'}</div></div>`).join('')}
+        <div class="detail-item"><div class="detail-item-label">SYB Years</div><div class="detail-item-value">${r['SYB No of Years']||'—'}</div></div>
+      </div>
+    </div>`;
+  document.getElementById('detailPanel').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+  selectedRow = null;
+  renderTable();
+}
+
+document.querySelectorAll('thead th[data-col]').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
+    document.querySelectorAll('thead th').forEach(t=>t.classList.remove('sorted'));
+    th.classList.add('sorted');
+    applyFilters();
+  });
+});
+
+document.getElementById('search').addEventListener('input', applyFilters);
+document.getElementById('filterPOC').addEventListener('change', applyFilters);
+
+function exportCSV() {
+  const cols = [
+    'Client Name','Client ID','CX POC','Engagement Status','Employee Base',
+    'Integration Method','HRIS Integration with VC','Recognition','Perks',
+    'Redemption','Pulse','MS Teams','Profile Badge','SYB','SYB No of Years',
+    'Subscription Value (Yearly)','Billing Frequency','Cost per User','ARR'
+  ];
+  const escape = v => {
+    const s = (v === undefined || v === null) ? '' : String(v);
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s;
+  };
+  const rows = [cols.map(escape).join(',')];
+  filtered.forEach(r => rows.push(cols.map(c => escape(r[c])).join(',')));
+  const blob = new Blob([rows.join('\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'cx_clients_export.csv';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+renderStats(DATA);
+populatePOC();
+buildFeatureSelect();
+buildIntegSelect();
+applyFilters();
+</script>
+</body>
+</html>
